@@ -1,5 +1,6 @@
 import os
 import time
+import json
 from datetime import datetime
 import pandas as pd
 #from keys import get_server_key, set_server_key
@@ -62,12 +63,13 @@ def fill_master(ID_LIST, Last_Date):
     dfs = [pd.read_csv(os.getcwd() + "/" + file_name(id), index_col=False) for id in ID_LIST]
     df_5min_master = pd.concat(dfs, axis = 1)
     df_5min_master = df_5min_master.loc[:,~df_5min_master.columns.duplicated(keep='first')].copy()
+    #Last_Date means only the last 5 minute point is appeaned to the master
     if Last_Date == True:
         df_5min_master = df_5min_master.iloc[-2,:]
         df_5min_master = df_5min_master.to_frame().T
 
-    # Check to see if there are nan values in 5-minute dataframe
-    if df_5min_master.isnull().values.any():
+    # Check to see if there are nan values in 5-minute dataframe and if Last_Date is True (meaning only the last 5 minute point is being appended to the master)
+    if df_5min_master.isnull().values.any() & Last_Date == True:
         # Wait 20 seconds and try again to collect data
         print("Missing Data...Waiting 20 seconds to try again...")
         time.sleep(20)
@@ -139,19 +141,23 @@ def remove_csv(file_name): # removes file from cwd
         print(file_name+' cannot be removed. Does it exist?')
     return
 
-# Can be used for testing Raw_Data.py on its own
 def main():
+    keys= open('appkeys.json')
+    keydata = json.load(keys)
+    print(keydata)
+    print(type(keydata["IP_1"]))
+
 
     while True:
         SERVER_IDS = [1, 2, 3]
         print("starting data collection...")
-        pullData("10.113.1.158","ftp","ftp","1")
+        pullData(keydata["IP_1"],keydata["ftp_user"],keydata["ftp_pass"],"1")
         daily_data_trim(1)
-        pullData("10.113.1.157","ftp","ftp","2")
+        pullData(keydata["IP_2"],keydata["ftp_user"],keydata["ftp_pass"],"2")
         daily_data_trim(2)
-        pullData("10.113.1.155","ftp","ftp","3")
+        pullData(keydata["IP_3"],keydata["ftp_user"],keydata["ftp_pass"],"3")
         daily_data_trim(3)
-        merged_dadta = fill_master(SERVER_IDS, False)
+        merged_dadta = fill_master(SERVER_IDS, True)
         merged_data = merge_master(merged_dadta)
         print("Done!")
         time.sleep(60)
