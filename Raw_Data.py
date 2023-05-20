@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import boto3
 from datetime import datetime
 import pandas as pd
 #from keys import get_server_key, set_server_key
@@ -140,6 +141,24 @@ def remove_csv(file_name): # removes file from cwd
     else:
         print(file_name+' cannot be removed. Does it exist?')
     return
+def send_to_space():
+    # send to s3
+    # set variables for AWS access
+    f = open('appkeys.json')
+    data = json.load(f)
+    #set variable x to the value of the ID key in meterkeys dictionary
+    x = data["port"]
+
+
+    session = boto3.Session(
+        aws_access_key_id= data["aws_access_key_id"],
+        aws_secret_access_key= data["aws_secret_access_key"],
+    )
+    s3 = session.resource('s3')
+    s3.meta.client.upload_file(Filename=os.getcwd() + '\master.csv',Bucket= 'osuenergytestbucket',Key ='master.csv')
+    # remove csvs
+    return
+
 
 def main():
     keys= open('appkeys.json')
@@ -159,6 +178,10 @@ def main():
         daily_data_trim(3)
         merged_dadta = fill_master(SERVER_IDS, True)
         merged_data = merge_master(merged_dadta)
+        # function to send data to s3 database
+        send_to_space()
+
+
         print("Done!")
         time.sleep(60)
 
