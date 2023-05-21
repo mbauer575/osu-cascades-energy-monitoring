@@ -1,6 +1,8 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import boto3
+import json
 # from Raw_Data import *
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
@@ -17,6 +19,18 @@ st.markdown(hide_menu_style, unsafe_allow_html=True)
 
 #refreshes page every 5 minutes
 st_autorefresh(interval=5 * 60 * 1000, key="dataframerefresh")
+
+# use boto3 to connect to s3 and download the file
+# get aws credentials from json file
+f = open('appkeys.json')
+data = json.load(f)
+
+session = boto3.Session(
+    aws_access_key_id= data["aws_access_key_id"],
+    aws_secret_access_key= data["aws_secret_access_key"],
+)
+s3 = session.resource('s3')
+s3.meta.client.download_file('osuenergytestbucket', 'master.csv', 'master.csv')
 
 
 # Read in data from csv to dataframe
@@ -114,9 +128,24 @@ tab1, tab7, tab2, tab3, tab4, tab5, tab6,  =    st.tabs(['Total Energy', 'Compar
 with tab1:
     st.header('Total Energy Consumption')
     st.metric('Building Daily Average','{} kWh'.format(total_pwr_avg))
-    st.line_chart(dataframe, x='Time', y=('TOTAL'))
+    #set radio button to select time period and display horizontal selections
+    time_period = st.radio(
+        "Select a time period",
+        ["1 day", "1 week","1 month"],
+        horizontal=True,
+    )
 
-
+    if time_period == "1 day":
+        st.line_chart(dataframe, x='Time', y='TOTAL')
+    elif time_period == "1 week":
+        # Code to aggregate data for a week and create a weekly chart
+        st.line_chart(dataframe, x='Time', y='TOTAL')
+    elif time_period == "1 month":
+        # Code to aggregate data for a month and create a monthly chart
+        st.line_chart(dataframe, x='Time', y='TOTAL')
+        # st.write(time_period)
+    else:
+        st.write('Please select a time period')
 with tab7:
     st.header('Usage by Floor Comparison')
     col1,col2,col3,col4 = st.columns(4)
