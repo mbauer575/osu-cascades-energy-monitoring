@@ -37,10 +37,13 @@ s3.meta.client.download_file('osuenergytestbucket', 'master.csv', 'master.csv')
 dataframe = pd.read_csv('master.csv',parse_dates=[['Date', 'Time']])
 
 dataframe['Time'] = dataframe['Date_Time']
-print(dataframe.info())
-print(dataframe.head())
+
+# print statements for debugging
+# print(dataframe.info())
+# print(dataframe.head())
+
 # Title webpage
-st.markdown("<h1 style='text-align: center; color: orange;'>OSU-Cascades Energy Challenge</h1>",unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: orange;'>Residance Hall Energy Dashboard</h1>",unsafe_allow_html=True)
 # st.title('ENERGY!!! :zap:')
 
 st.markdown("<h2 style='text-align: center;'>Current Electrical Usage</h2>", unsafe_allow_html=True)
@@ -187,3 +190,5 @@ with tab6:
     st.header('Utilities')
     st.subheader('The utilities consume :blue['+str(utilities_kWh_Day)+' kWh] per day on average!')
     st.line_chart(dataframe, x = 'Time', y = ('Utilities'))
+
+print("webpage successfully loaded")

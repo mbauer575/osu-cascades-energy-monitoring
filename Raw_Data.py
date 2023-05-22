@@ -20,9 +20,9 @@ def pullData(FTP_HOST,FTP_USER,FTP_PASS,SERVER_NUM):
         remove_csv(Fname)
 
     
-    print("Attempting to download"+Fname+" at ")
-    print(datetime.now())
-    print(time.time())
+    print("[DOWNLOAD_INFO]  Attempting to download"+Fname+" at ")
+    print("[DOWNLOAD_INFO]  "+str(datetime.now()))
+    print("[DOWNLOAD_INFO]  "+str(time.time()))
 
     cnopts = sftp.CnOpts()
     cnopts.hostkeys = None
@@ -31,7 +31,7 @@ def pullData(FTP_HOST,FTP_USER,FTP_PASS,SERVER_NUM):
     with sftp.Connection(host=FTP_HOST, username=FTP_USER, password=FTP_PASS, cnopts=cnopts, port=2222) as sftp:
         sftp.chdir('trend')
         sftp.get("Trend_Virtual_Meter_Watt_"+Fdate+".csv")
-        print("Download successful")
+        print("[DOWNLOAD_INFO]  "+"Download successful")
         os.rename("Trend_Virtual_Meter_Watt_"+Fdate+".csv","Trend_Virtual_Meter_Watt_"+Fdate+"_"+str(SERVER_NUM)+".csv")
 
 def daily_data_trim(ID):
@@ -72,7 +72,7 @@ def fill_master(ID_LIST, Last_Date):
     # Check to see if there are nan values in 5-minute dataframe and if Last_Date is True (meaning only the last 5 minute point is being appended to the master)
     if df_5min_master.isnull().values.any() & Last_Date == True:
         # Wait 20 seconds and try again to collect data
-        print("Missing Data...Waiting 20 seconds to try again...")
+        print("[CAUTION/WARN]  "+"Missing Data...Waiting 20 seconds to try again...")
         time.sleep(20)
         fill_master(ID_LIST, Last_Date)
     
@@ -119,7 +119,7 @@ def merge_master(df_5min_master):
     master = pd.read_csv(os.getcwd() + '\master.csv')
     # Merge 5 minute dataframe with master
     # If time in df_5min_master is not in master, add it to master
-    print(df_5min_master['Time'].iloc[0])
+    print("[MERGING_INFO]  latest data point:"+df_5min_master['Time'].iloc[0])
     if df_5min_master['Time'].iloc[0] not in master['Time'].iloc[-1]:
         master = pd.concat([master, df_5min_master],ignore_index = False)
 
@@ -137,9 +137,9 @@ def remove_csv(file_name): # removes file from cwd
     path = os.getcwd()+ "\\" + file_name
     if os.path.exists(path):
         os.remove(path)
-        print(file_name+' cleared')
+        print("[FILE_INFO]  "+file_name+' cleared')
     else:
-        print(file_name+' cannot be removed. Does it exist?')
+        print("[FILE_INFO]  "+file_name+' cannot be removed. Does it exist?')
     return
 def send_to_space():
     # send to s3
@@ -163,13 +163,11 @@ def send_to_space():
 def main():
     keys= open('appkeys.json')
     keydata = json.load(keys)
-    print(keydata)
-    print(type(keydata["IP_1"]))
 
 
     while True:
         SERVER_IDS = [1, 2, 3]
-        print("starting data collection...")
+        print("[STARTUP_INFO]  "+"starting data collection...")
         pullData(keydata["IP_1"],keydata["ftp_user"],keydata["ftp_pass"],"1")
         daily_data_trim(1)
         pullData(keydata["IP_2"],keydata["ftp_user"],keydata["ftp_pass"],"2")
@@ -182,7 +180,9 @@ def main():
         send_to_space()
 
 
-        print("Done!")
-        time.sleep(60)
+        print("[INFO]  "+"Done!")
+        time.sleep(280)
+        print("[INFO]  refreshing in 20 seconds...")
+        time.sleep(20)
 
 main()
