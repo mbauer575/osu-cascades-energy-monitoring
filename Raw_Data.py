@@ -70,11 +70,16 @@ def fill_master(ID_LIST, Last_Date):
         df_5min_master = df_5min_master.to_frame().T
 
     # Check to see if there are nan values in 5-minute dataframe and if Last_Date is True (meaning only the last 5 minute point is being appended to the master)
-    if df_5min_master.isnull().values.any() & Last_Date == True:
+    if df_5min_master.isnull().values.any() and Last_Date == True:
         # Wait 20 seconds and try again to collect data
         print("[CAUTION/WARN]  "+"Missing Data...Waiting 20 seconds to try again...")
+        print(df_5min_master)
+        #send df_5min_master to csv file named testing
+        df_5min_master.to_csv("testing.csv", index = False)
         time.sleep(20)
+        download_data()
         fill_master(ID_LIST, Last_Date)
+        
     
     # absolute value the data in columns titled "Server1_meter10_avg" and "Server1_meter10_min" and "Server1_meter10_max"
     df_5min_master['Server1_meter10_avg'] = df_5min_master['Server1_meter10_avg'].abs()
@@ -155,9 +160,21 @@ def send_to_space():
         aws_secret_access_key= data["aws_secret_access_key"],
     )
     s3 = session.resource('s3')
-    s3.meta.client.upload_file(Filename=os.getcwd() + '\master.csv',Bucket= 'osuenergytestbucket',Key ='master.csv')
+    s3.meta.client.upload_file(Filename=os.getcwd() + '\master.csv',Bucket= 'cascades-energy-bucket',Key ='master.csv')
     # remove csvs
     return
+
+def download_data():
+    keys= open('appkeys.json')
+    keydata = json.load(keys)
+
+    print("[STARTUP_INFO]  "+"starting data collection...")
+    pullData(keydata["IP_1"],keydata["ftp_user"],keydata["ftp_pass"],"1")
+    daily_data_trim(1)
+    pullData(keydata["IP_2"],keydata["ftp_user"],keydata["ftp_pass"],"2")
+    daily_data_trim(2)
+    pullData(keydata["IP_3"],keydata["ftp_user"],keydata["ftp_pass"],"3")
+    daily_data_trim(3)
 
 
 def main():
@@ -167,19 +184,12 @@ def main():
 
     while True:
         SERVER_IDS = [1, 2, 3]
-        print("[STARTUP_INFO]  "+"starting data collection...")
-        pullData(keydata["IP_1"],keydata["ftp_user"],keydata["ftp_pass"],"1")
-        daily_data_trim(1)
-        pullData(keydata["IP_2"],keydata["ftp_user"],keydata["ftp_pass"],"2")
-        daily_data_trim(2)
-        pullData(keydata["IP_3"],keydata["ftp_user"],keydata["ftp_pass"],"3")
-        daily_data_trim(3)
+        download_data()
+        # set fillmaster to true to fill master with only the last data point
         merged_dadta = fill_master(SERVER_IDS, True)
         merged_data = merge_master(merged_dadta)
         # function to send data to s3 database
         send_to_space()
-
-
         print("[INFO]  "+"Done!")
         time.sleep(280)
         print("[INFO]  refreshing in 20 seconds...")
