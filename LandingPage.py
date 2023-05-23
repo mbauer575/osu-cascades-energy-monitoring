@@ -30,7 +30,7 @@ session = boto3.Session(
     aws_secret_access_key= data["aws_secret_access_key"],
 )
 s3 = session.resource('s3')
-s3.meta.client.download_file('osuenergytestbucket', 'master.csv', 'master.csv')
+s3.meta.client.download_file('cascades-energy-bucket', 'master.csv', 'master.csv')
 
 
 # Read in data from csv to dataframe
