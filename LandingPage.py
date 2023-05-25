@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import boto3
+from FakeBoto import boto3
 import json
 # from Raw_Data import *
 from datetime import datetime
